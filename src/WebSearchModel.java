@@ -1,45 +1,61 @@
 package src;
 
 import java.io.*;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 /**
- * Perform "web search" (from a  file), notify the interested observers of each query.
+ * Modelo de busca.
+ * Agora funciona em conjunto com Strategies (filtros),
+ * notificando observadores apenas quando o filtro retornar true.
+ *
+ * >> - Criação de ObserverEntry
+ * >> - Registro de observador junto com filtro
+ * >> - Notificação apenas se filtro aprovar"
  */
 public class WebSearchModel {
-    private final File sourceFile;
-    private final List<QueryObserver> observers = new ArrayList<>();
 
-    public interface QueryObserver {
-        void onQuery(String query);
+    // Classe interna para associar observador + filtro
+    private static class ObserverEntry {
+        QueryObserver observer;
+        QueryFilter filter;
+
+        ObserverEntry(QueryObserver observer, QueryFilter filter) {
+            this.observer = observer;
+            this.filter = filter;
+        }
     }
 
-    public WebSearchModel(File sourceFile) {
-        this.sourceFile = sourceFile;
+    private final List<ObserverEntry> observers = new ArrayList<>();
+
+    /**
+     * Registra um observador junto com sua estratégia de filtro.
+     */
+    public void addObserver(QueryObserver observer, QueryFilter filter) {
+        observers.add(new ObserverEntry(observer, filter));
     }
 
-    public void pretendToSearch() {
-        try (BufferedReader br = new BufferedReader(new FileReader(sourceFile))) {
-            while ( true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                }
-                notifyAllObservers(line);
+    /**
+     * Lê arquivo linha a linha e processa as consultas.
+     */
+    public void readQueries(String filename) {
+        try (BufferedReader reader = new BufferedReader(new FileReader(filename))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                processQuery(line);
             }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    public void addQueryObserver(QueryObserver queryObserver) {
-        observers.add(queryObserver);
-    }
-
-    private void notifyAllObservers(String line) {
-        for (QueryObserver obs : observers) {
-            obs.onQuery(line);
+    /**
+     * Notifica apenas os observadores cujos filtros considerarem a consulta interessante.
+     */
+    private void processQuery(String query) {
+        for (ObserverEntry entry : observers) {
+            if (entry.filter.isInteresting(query)) {
+                entry.observer.handleQuery(query);
+            }
         }
     }
 }
