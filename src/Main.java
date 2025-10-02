@@ -1,20 +1,24 @@
 package src;
 
-import java.io.File;
-
 /**
- * Launch the web-search example
+ * Cliente do sistema.
+ * Registra dois Snoopers com filtros diferentes:
+ *  - FriendFilter -> imprime "Oh Yes!"
+ *  - LongQueryFilter -> imprime "So long"
  */
 public class Main {
     public static void main(String[] args) {
-        // Source file (in the project's data/ folder)
-        File inputTextFile = new File("data/Hamlet.txt");
+        WebSearchModel model = new WebSearchModel();
 
-        // Build object graph
-        WebSearchModel model = new WebSearchModel(inputTextFile);
-        Snooper snoop = new Snooper(model);
+        // Observador que reage a consultas com "friend"
+        Snooper friendSnooper = new Snooper("Oh Yes!");
+        model.addObserver(friendSnooper, new FriendFilter());
 
-        // Execute
-        model.pretendToSearch();
+        // Observador que reage a consultas longas (>60 caracteres)
+        Snooper longSnooper = new Snooper("So long");
+        model.addObserver(longSnooper, new LongQueryFilter());
+
+        // Lê Hamlet.txt simulando as consultas
+        model.readQueries("data/Hamlet.txt");
     }
 }
